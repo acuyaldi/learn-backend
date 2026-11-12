@@ -8,7 +8,7 @@ Punya folder proyek, Git, dan PostgreSQL yang berjalan di Docker, siap dipakai m
 
 ## Cek versi
 
-Yang sudah terpasang di Mac kamu (dari pengecekan sebelumnya): Node v24, npm 11, Git 2.55, Docker 29, Docker Compose v5, Homebrew 6. Semuanya cukup.
+Butuh: Node (LTS terbaru), npm, Git, Docker dengan Compose v2, dan `jq`. Semua perintah di modul ini memakai shell bash (macOS, Linux, atau WSL2 di Windows).
 
 ```bash
 node -v && npm -v && git --version
@@ -18,10 +18,33 @@ docker --version && docker compose version
 Pasang alat bantu kecil:
 
 ```bash
-brew install jq
+brew install jq          # macOS
+sudo apt install jq      # Linux / WSL2 (Ubuntu)
 ```
 
-**Jangan** `brew install postgresql`. Database berjalan di Docker, dan Postgres di host bisa bentrok di port 5432.
+**Jangan** pasang PostgreSQL langsung di host (`brew install postgresql`, `apt install postgresql`, atau installer Windows). Database berjalan di Docker, dan Postgres di host bisa bentrok di port 5432.
+
+## Khusus Windows
+
+Cara yang disarankan: **kerjakan semuanya di dalam WSL2**, supaya semua perintah di materi berlaku apa adanya. Modul 14 (VPS) juga Linux.
+
+1. Pasang WSL2 + Ubuntu: `wsl --install` di PowerShell (admin), lalu restart. Lihat https://learn.microsoft.com/windows/wsl/install
+2. Pasang Docker Desktop dan pastikan backend WSL2 aktif, termasuk integrasi untuk distro Ubuntu kamu (Settings → Resources → WSL Integration). Lihat https://docs.docker.com/desktop/features/wsl/
+3. Di terminal Ubuntu, pasang Node (misalnya lewat nvm), Git, dan `jq` dengan `apt`.
+4. Simpan proyek di filesystem Linux (`~/Developer/...` di dalam WSL), **bukan** di `/mnt/c/...`. Di `/mnt/c` operasi file lambat dan file watcher sering tidak mendeteksi perubahan.
+5. Buka proyek dari VS Code dengan `code .` dari terminal WSL (extension WSL).
+
+Kalau tetap memakai Windows native (PowerShell), perintahnya berbeda:
+
+| Materi (bash) | Windows native |
+|---|---|
+| `brew install jq` | `winget install jqlang.jq` |
+| `lsof -i :5432` | `Get-NetTCPConnection -LocalPort 5432` |
+| `mkdir -p dir && cd dir` | `New-Item -ItemType Directory -Force dir; cd dir` |
+| `curl ...` | `curl.exe ...` (di PowerShell 5.1, `curl` adalah alias `Invoke-WebRequest`) |
+| `~/Developer` | `$HOME\Developer` |
+
+Atau pakai Git Bash, yang menerima sebagian besar perintah bash di materi ini.
 
 ## Folder proyek
 
@@ -42,6 +65,12 @@ coverage/
 .env.*
 !.env.example
 .DS_Store
+```
+
+Buat `.gitattributes` supaya line ending tetap LF di semua OS. Script yang ber-line ending CRLF (Windows) gagal dijalankan di dalam container Linux.
+
+```
+* text=auto eol=lf
 ```
 
 ## PostgreSQL di Docker
@@ -90,7 +119,7 @@ docker compose down -v          # HAPUS container DAN data. Hanya untuk reset la
 
 ## Masalah umum
 
-- **Port 5432 dipakai:** `lsof -i :5432` untuk melihat prosesnya. Hentikan Postgres lain atau ganti port host (`"127.0.0.1:5433:5432"`).
+- **Port 5432 dipakai:** `lsof -i :5432` (Windows native: `Get-NetTCPConnection -LocalPort 5432`) untuk melihat prosesnya. Hentikan Postgres lain atau ganti port host (`"127.0.0.1:5433:5432"`).
 - **Docker tidak merespons:** buka Docker Desktop dan tunggu sampai statusnya stabil.
 - **Lupa password atau ingin mulai bersih:** `docker compose down -v` lalu `docker compose up -d`.
 
@@ -98,11 +127,11 @@ docker compose down -v          # HAPUS container DAN data. Hanya untuk reset la
 
 - [ ] `docker compose ps` menunjukkan service `db` berjalan.
 - [ ] Kamu bisa masuk `psql` dan menjalankan `\l`.
-- [ ] Folder `~/Developer/job-tracker` adalah repo Git dengan `.gitignore` di atas.
+- [ ] Folder `~/Developer/job-tracker` adalah repo Git dengan `.gitignore` dan `.gitattributes` di atas.
 - [ ] Kamu bisa menjelaskan kenapa port dibuka hanya ke `127.0.0.1`.
 
 ## Kuis mandiri
 
 1. Apa beda `docker compose down` dan `docker compose down -v`?
-2. Kenapa Postgres dijalankan di Docker, bukan dipasang langsung di Mac?
+2. Kenapa Postgres dijalankan di Docker, bukan dipasang langsung di laptop?
 3. Apa arti `127.0.0.1:5432:5432` pada baris `ports`?
